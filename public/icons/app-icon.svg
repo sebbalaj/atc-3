@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Vector Control radar icon</title>
+  <rect width="512" height="512" rx="96" fill="#07141c"/>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#245a55" stroke-width="12"/>
+  <circle cx="256" cy="256" r="104" fill="none" stroke="#245a55" stroke-width="8"/>
+  <path d="M256 256 376 128" stroke="#63f5b0" stroke-width="14" stroke-linecap="round"/>
+  <path d="M237 101h38l15 119 101 50v27l-106-20-12 96 45 29v23l-62-13-62 13v-23l45-29-12-96-106 20v-27l101-50z" fill="#d9fff0"/>
+  <circle cx="256" cy="256" r="18" fill="#63f5b0"/>
+</svg>
