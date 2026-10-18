@@ -1,4 +1,9 @@
 import Phaser from 'phaser';
+import { AircraftSimulation } from '../../application/AircraftSimulation';
+import { AIRCRAFT_SIMULATION_CONFIG } from '../../config/aircraftSimulation';
+import { AircraftRenderer } from '../renderers/AircraftRenderer';
+import type { FlightStripItem, RegionalMapView } from '../ports/RegionalMapView';
+import type { RegionalMapStartData } from './RegionalMapStartData';
 
 const SATELLITE_TEXTURE = 'regional-satellite';
 
@@ -8,6 +13,11 @@ interface Point {
 }
 
 export class RegionalMapScene extends Phaser.Scene {
+  readonly #view: RegionalMapView;
+  #startData: RegionalMapStartData = { seed: 0x4a3f2c1d };
+  #simulation: AircraftSimulation | null = null;
+  #aircraftRenderer: AircraftRenderer | null = null;
+  #lastStripTick = -1;
   #satellite: Phaser.GameObjects.Image | null = null;
   #shade!: Phaser.GameObjects.Graphics;
   #chart!: Phaser.GameObjects.Graphics;
@@ -20,8 +30,13 @@ export class RegionalMapScene extends Phaser.Scene {
   #radarRadius = 0;
   readonly #systemReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  constructor() {
+  constructor(view: RegionalMapView) {
     super('regional-map');
+    this.#view = view;
+  }
+
+  init(data: RegionalMapStartData): void {
+    this.#startData = data;
   }
 
   preload(): void {
@@ -36,9 +51,21 @@ export class RegionalMapScene extends Phaser.Scene {
     this.#chart = this.add.graphics().setDepth(2);
     this.#sweep = this.add.graphics().setDepth(3);
     this.#redrawMap();
+    this.#simulation = new AircraftSimulation({
+      seed: this.#startData.seed,
+      config: AIRCRAFT_SIMULATION_CONFIG,
+      ...(this.#startData.debugAircraftCount !== undefined
+        ? { debugAircraftCount: this.#startData.debugAircraftCount }
+        : {}),
+    });
+    this.#aircraftRenderer = new AircraftRenderer(
+      this,
+      Math.max(16, this.#startData.debugAircraftCount ?? 0),
+    );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.#handleShutdown);
   }
 
-  override update(time: number): void {
+  override update(time: number, delta: number): void {
     const resized = this.scale.width !== this.#lastWidth || this.scale.height !== this.#lastHeight;
     if (resized) {
       this.#redrawMap();
@@ -50,12 +77,56 @@ export class RegionalMapScene extends Phaser.Scene {
       this.#drawSweep(time, reducedMotion);
     }
     this.#lastReducedMotion = reducedMotion;
+
+    const simulation = this.#simulation;
+    const renderer = this.#aircraftRenderer;
+    if (!simulation || !renderer) {
+      return;
+    }
+    const frame = simulation.advance(delta / 1_000);
+    const viewport = this.#view.getRadarViewport(this.scale.width, this.scale.height);
+    renderer.render(frame, viewport);
+    if (frame.tick !== this.#lastStripTick) {
+      this.#lastStripTick = frame.tick;
+      const strips: FlightStripItem[] = frame.aircraft.map((aircraft) => ({
+        id: aircraft.id,
+        callsign: aircraft.callsign,
+        aircraftType: 'LIGHT PROP',
+        altitude: `${aircraft.altitudeFeet} FT`,
+        destination: aircraft.destinationLabel,
+        state: aircraft.lifecycle,
+      }));
+      this.#view.reconcileFlightStrips(strips);
+      if (frame.tick % 30 === 0 || frame.tick === 0) {
+        const diagnostics = simulation.diagnostics();
+        const mode = this.#startData.debugAircraftCount ? 'DEBUG' : 'SIM 30HZ';
+        const separation = Number.isFinite(diagnostics.minimumPairDistance)
+          ? diagnostics.minimumPairDistance.toFixed(3)
+          : 'N/A';
+        this.#view.setSimulationDiagnostics(
+          `${mode} · ${diagnostics.activeAircraft} TRACKS · MIN ${separation} · T${diagnostics.tick}`,
+        );
+      }
+    }
   }
+
+  readonly #handleShutdown = (): void => {
+    this.#simulation?.destroy();
+    this.#aircraftRenderer?.clear();
+    this.#view.clearFlightStrips();
+    this.#simulation = null;
+    this.#aircraftRenderer = null;
+    this.#satellite = null;
+    this.#labels = [];
+    this.#lastStripTick = -1;
+    this.#lastReducedMotion = null;
+  };
 
   #redrawMap(): void {
     const width = this.scale.width;
     const height = this.scale.height;
-    const radarHeight = height * (height <= 650 ? 0.7 : 0.75);
+    const viewport = this.#view.getRadarViewport(width, height);
+    const radarHeight = viewport.height;
     this.#lastWidth = width;
     this.#lastHeight = height;
     this.#labels.forEach((label) => label.destroy());

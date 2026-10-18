@@ -5,6 +5,11 @@ import type {
 } from '../../application/MenuPersistenceController';
 import type { AudioGate, AudioGateState } from '../../infrastructure/audio/AudioGate';
 import type { UserSettingsV1 } from '../../application/ports/persistence';
+import type {
+  FlightStripItem,
+  RadarViewport,
+  RegionalMapView,
+} from '../ports/RegionalMapView';
 import type { PwaUpdateView } from '../../infrastructure/pwa/PwaUpdateController';
 
 interface InstallPromptEvent extends Event {
@@ -26,7 +31,7 @@ export interface MobileShellActions {
   returnToMenu(): void;
 }
 
-export class MobileShell implements PwaUpdateView {
+export class MobileShell implements PwaUpdateView, RegionalMapView {
   readonly #root: HTMLElement;
   readonly #audio: AudioGate;
   readonly #actions: MobileShellActions;
@@ -43,6 +48,7 @@ export class MobileShell implements PwaUpdateView {
   #resumeAction: (() => void) | null = null;
   #mapActive = false;
   #pendingUpdateAction: (() => void) | null = null;
+  readonly #stripRows = new Map<number, HTMLElement>();
 
   constructor(
     root: HTMLElement,
@@ -65,6 +71,69 @@ export class MobileShell implements PwaUpdateView {
 
   get isAtSafeUpdateBoundary(): boolean {
     return !this.#mapActive && !this.#root.querySelector<HTMLDialogElement>('dialog[open]');
+  }
+
+  getRadarViewport(canvasWidth: number, canvasHeight: number): RadarViewport {
+    const consoleTop = this.#requiredElement<HTMLElement>('.atc-console').getBoundingClientRect().top;
+    const cssHeight = Math.max(1, window.innerHeight);
+    const fallbackRatio = window.innerHeight <= 650 ? 0.7 : 0.75;
+    const height = consoleTop > 0
+      ? (consoleTop / cssHeight) * canvasHeight
+      : canvasHeight * fallbackRatio;
+    return { x: 0, y: 0, width: canvasWidth, height: Math.max(1, height) };
+  }
+
+  reconcileFlightStrips(items: readonly FlightStripItem[]): void {
+    const list = this.#requiredElement<HTMLElement>('#flight-strip-list');
+    const activeIds = new Set<number>();
+    for (const item of items) {
+      activeIds.add(item.id);
+      let row = this.#stripRows.get(item.id);
+      if (!row) {
+        row = document.createElement('article');
+        row.className = 'flight-strip flight-strip--healthy';
+        row.setAttribute('role', 'listitem');
+        row.innerHTML = `
+          <div class="strip-identity"><strong data-field="callsign"></strong><span data-field="type"></span></div>
+          <div class="strip-destination"><strong data-field="destination"></strong><span data-field="state"></span></div>
+          <div class="strip-altitude" data-field="altitude"></div>
+        `;
+        list.append(row);
+        this.#stripRows.set(item.id, row);
+      }
+      this.#setStripField(row, 'callsign', item.callsign);
+      this.#setStripField(row, 'type', item.aircraftType);
+      this.#setStripField(row, 'destination', item.destination);
+      this.#setStripField(row, 'state', item.state);
+      this.#setStripField(row, 'altitude', item.altitude);
+    }
+
+    for (const [id, row] of this.#stripRows) {
+      if (!activeIds.has(id)) {
+        row.remove();
+        this.#stripRows.delete(id);
+      }
+    }
+    this.#requiredElement('#active-flight-count').textContent = `${items.length} ACTIVE`;
+    this.#requiredElement<HTMLElement>('#empty-flight-strips').hidden = items.length > 0;
+  }
+
+  clearFlightStrips(): void {
+    this.#stripRows.forEach((row) => row.remove());
+    this.#stripRows.clear();
+    this.#requiredElement('#active-flight-count').textContent = '0 ACTIVE';
+    this.#requiredElement<HTMLElement>('#empty-flight-strips').hidden = false;
+  }
+
+  setSimulationDiagnostics(text: string): void {
+    this.#requiredElement('#simulation-diagnostics').textContent = text;
+  }
+
+  #setStripField(row: HTMLElement, field: string, value: string): void {
+    const element = row.querySelector<HTMLElement>(`[data-field="${field}"]`);
+    if (element && element.textContent !== value) {
+      element.textContent = value;
+    }
   }
 
   setAudioState(state: AudioGateState): void {
@@ -183,7 +252,7 @@ export class MobileShell implements PwaUpdateView {
         <section class="map-hud" id="map-hud" aria-label="Regional radar console" hidden>
           <div class="map-mode-label" aria-hidden="true">
             <span>REGIONAL CONTROL AREA</span>
-            <strong>ART PREVIEW · NO ACTIVE TRAFFIC</strong>
+            <strong id="simulation-diagnostics">SIM 30HZ · INITIALIZING</strong>
           </div>
           <section class="atc-console" aria-label="Air traffic control console">
             <div class="console-status" aria-label="Shift status">
@@ -196,11 +265,12 @@ export class MobileShell implements PwaUpdateView {
             <section class="flight-strip-panel" aria-labelledby="flight-strips-title">
               <header>
                 <h2 id="flight-strips-title">FLIGHT STRIPS</h2>
-                <span>0 ACTIVE</span>
+                <span id="active-flight-count">0 ACTIVE</span>
               </header>
-              <div class="empty-strips">
+              <div class="flight-strip-list" id="flight-strip-list" role="list"></div>
+              <div class="empty-strips" id="empty-flight-strips">
                 <strong>NO ACTIVE TRAFFIC</strong>
-                <span>Aircraft simulation begins after visual approval.</span>
+                <span>Monitoring the sector perimeter.</span>
               </div>
             </section>
           </section>
@@ -345,6 +415,8 @@ export class MobileShell implements PwaUpdateView {
 
   #enterRegionalMap(): void {
     this.#mapActive = true;
+    this.clearFlightStrips();
+    this.setSimulationDiagnostics('SIM 30HZ · INITIALIZING');
     this.#requiredElement<HTMLElement>('.menu-panel').hidden = true;
     this.#requiredElement<HTMLElement>('.build-footer').hidden = true;
     this.#requiredElement<HTMLElement>('#map-hud').hidden = false;
@@ -362,6 +434,8 @@ export class MobileShell implements PwaUpdateView {
     this.#requiredElement<HTMLElement>('.system-label').innerHTML =
       '<i class="status-dot" aria-hidden="true"></i> REGIONAL CONTROL';
     this.#actions.returnToMenu();
+    this.clearFlightStrips();
+    this.setSimulationDiagnostics('SIM 30HZ · STANDBY');
     this.#renderPendingUpdate();
     this.#requiredElement<HTMLButtonElement>('#continue-shift').focus();
   }

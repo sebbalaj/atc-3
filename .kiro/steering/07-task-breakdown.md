@@ -29,13 +29,13 @@ Execute exactly one task at a time. At the end of each task: build, open the run
 
 ## Phase 1 — First playable routing loop (Map 1)
 
-### Task 3 — Realistic satellite/ATC regional map and radar console (current; awaiting owner art confirmation)
+### Task 3 — Realistic satellite/ATC regional map and radar console (complete; owner phone-approved)
 - Draw a simplified but credible regional environment using a subdued satellite-imagery base treatment beneath an aeronautical-chart/ATC overlay, plus airport/taxiway/building geometry, realistically marked runway `REG 09/27`, threshold identifiers, restrained radar rings/sweep, status row, and empty flight-strip stack.
 - Use only locally bundled, license-audited imagery or generated satellite-style textures; the game must not depend on live map tiles. Establish normalized layout, resize mapping, and visual hierarchy that keeps operational contacts clearer than terrain detail.
 - Acceptance: map reads as realistic satellite imagery blended with civilian ATC rather than arcade neon, remains legible across target portrait sizes, console consumes roughly 25%, and identifiers do not overlap critical controls.
 - **Owner art gate:** publish a phone-playable checkpoint and explicitly ask the owner to confirm or revise imagery detail, radar color/opacity, labels, aircraft silhouettes, and overall realism. Do not begin Task 4 until the owner confirms the art direction after trying it.
 
-### Task 4 — Aircraft simulation and spawning
+### Task 4 — Aircraft simulation and spawning (current; awaiting owner phone check)
 - Add fixed-step simulation, seeded RNG, light-prop entity data, continuous movement, lifecycle, spawn reservation, pooled procedural renderer, labels, and strips.
 - No routing yet.
 - Acceptance: deterministic movement independent of frame rate; aircraft never spawn overlapping; 100 debug aircraft remain within frame budget; strips track lifecycle.

@@ -40,7 +40,13 @@ shell = new MobileShell(mount, audio, settings, {
   saveSettings: (nextSettings) => persistence.saveSettings(nextSettings),
   startRegionalMap: () => {
     game?.scene.stop('shell');
-    game?.scene.start('regional-map');
+    const debugCount = Number.parseInt(new URLSearchParams(location.search).get('debugAircraft') ?? '', 10);
+    game?.scene.start('regional-map', {
+      seed: 0x4a3f2c1d,
+      ...(Number.isFinite(debugCount) && debugCount > 0
+        ? { debugAircraftCount: Math.min(debugCount, 200) }
+        : {}),
+    });
   },
   returnToMenu: () => {
     game?.scene.stop('regional-map');
@@ -49,7 +55,7 @@ shell = new MobileShell(mount, audio, settings, {
 });
 shell.setSaveState(persistence.currentSaveState());
 
-game = createGame();
+game = createGame(shell);
 const lifecycle = new AppLifecycle(game, audio, (paused) => shell.setInterruptionPaused(paused));
 shell.setResumeAction(() => lifecycle.resumeAfterInterruption());
 const updates = new PwaUpdateController(
