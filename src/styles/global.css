@@ -619,3 +619,165 @@ dialog::backdrop {
 #continue-shift[data-tone="warning"]:not(:disabled) {
   border-color: rgb(228 183 109 / 58%);
 }
+
+[hidden] {
+  display: none !important;
+}
+
+.map-hud {
+  position: fixed;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+}
+
+.map-mode-label {
+  position: absolute;
+  top: max(42px, calc(env(safe-area-inset-top) + 34px));
+  right: max(10px, env(safe-area-inset-right));
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  padding: 5px 6px;
+  color: #b9cbc4;
+  background: rgb(4 14 17 / 72%);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
+.map-mode-label strong {
+  color: var(--warning);
+  font-size: 0.48rem;
+  font-weight: 600;
+}
+
+.atc-console {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 25dvh;
+  min-height: 176px;
+  padding: 10px max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom))
+    max(10px, env(safe-area-inset-left));
+  border-top: 2px solid rgb(155 199 183 / 48%);
+  background:
+    linear-gradient(180deg, rgb(12 27 31 / 97%), rgb(5 15 18 / 99%)),
+    repeating-linear-gradient(90deg, transparent 0 39px, rgb(255 255 255 / 2%) 40px);
+  box-shadow: 0 -12px 30px rgb(0 0 0 / 28%);
+  pointer-events: auto;
+}
+
+.console-status {
+  display: grid;
+  grid-template-columns: 0.7fr 0.7fr 0.7fr 1.35fr auto;
+  gap: 5px;
+  align-items: stretch;
+  min-height: 45px;
+}
+
+.console-status > div {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: 4px 5px;
+  border: 1px solid rgb(148 186 173 / 17%);
+  background: rgb(15 34 37 / 72%);
+}
+
+.console-status span,
+.console-status strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.console-status span {
+  color: #81988f;
+  font-size: 0.47rem;
+  letter-spacing: 0.08em;
+}
+
+.console-status strong {
+  margin-top: 3px;
+  color: #d7e3de;
+  font-size: clamp(0.57rem, 2.2vw, 0.69rem);
+  font-weight: 600;
+}
+
+.console-status button {
+  min-width: 50px;
+  min-height: 45px;
+  padding: 0 7px;
+  color: var(--operational-bright);
+  font-size: 0.6rem;
+}
+
+.flight-strip-panel {
+  margin-top: 8px;
+  border: 1px solid rgb(148 186 173 / 18%);
+  background: rgb(7 20 23 / 72%);
+}
+
+.flight-strip-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 27px;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgb(148 186 173 / 14%);
+}
+
+.flight-strip-panel h2 {
+  margin: 0;
+  color: #aebfb8;
+  font-family: inherit;
+  font-size: 0.59rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+}
+
+.flight-strip-panel header span {
+  color: #71867e;
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
+.empty-strips {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 55px;
+  padding: 8px;
+}
+
+.empty-strips strong {
+  color: #97aaa3;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+}
+
+.empty-strips span {
+  max-width: 22ch;
+  color: #6f837b;
+  font-size: 0.54rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+@media (max-height: 650px) and (orientation: portrait) {
+  .atc-console {
+    height: 30dvh;
+    min-height: 166px;
+    padding-top: 7px;
+  }
+
+  .flight-strip-panel {
+    margin-top: 6px;
+  }
+
+  .empty-strips {
+    min-height: 48px;
+  }
+}

@@ -12,7 +12,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc -b --pretty false",
     "check": "npm run typecheck && npm run build",
-    "assets:fetch": "node scripts/fetch-assets.mjs"
+    "assets:fetch": "node scripts/fetch-assets.mjs",
+    "assets:map": "node scripts/fetch-map-imagery.mjs"
   },
   "dependencies": {
     "phaser": "4.2.1"
