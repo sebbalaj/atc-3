@@ -10,19 +10,19 @@ Execute exactly one task at a time. At the end of each task: build, open the run
 
 ## Phase 0 — Foundation and decisions
 
-### Task 0 — Scaffold and architecture documents (current)
+### Task 0 — Scaffold and architecture documents (complete)
 - Pin TypeScript, Phaser, Vite, and PWA dependencies.
 - Configure strict compilation, production bundle, manifest, service worker, portrait metadata, safe-area CSS, asset fetch script, and module layout.
 - Document mechanics, architecture, save migration, mobile UX, and decisions.
 - Acceptance: clean install/typecheck/build succeeds; no core gameplay exists; owner approves or amends open decisions.
 
-### Task 1 — Mobile shell and main menu
+### Task 1 — Mobile shell and main menu (complete; owner phone-approved)
 - Boot Phaser in a portrait-safe canvas while keeping menu/settings/install UI accessible.
 - Add orientation fallback, safe-area diagnostics, pause-on-background, first-interaction audio unlock, and update-prompt boundary.
 - Menu actions: New Shift (placeholder), Continue disabled without save, Settings, Save Import/Export placeholder.
 - Acceptance: usable at 320×568 and a tall phone; no page scroll/zoom; landscape pauses with rotate message; offline production shell reloads after first secure visit.
 
-### Task 2 — Save service v1
+### Task 2 — Save service v1 (current; awaiting owner phone check)
 - Implement envelope, runtime validation, atomic staging/backup write, load recovery, settings separation, export/import, and a sample future migration registry.
 - Persist menu settings and a placeholder progression record.
 - Acceptance: valid save round-trips; malformed primary falls back to backup without overwrite; future schema is preserved/rejected; update flow checkpoints first.
@@ -126,9 +126,10 @@ Execute exactly one task at a time. At the end of each task: build, open the run
 
 ## Phase 5 — Release hardening
 
-### Task 24 — Accessibility, onboarding, and tutorial
+### Task 24 — Accessibility, onboarding, tutorial, and landscape fallback
 - Guided first shift, contextual help, high contrast, reduced motion, audio controls, install/offline/update education.
-- Acceptance: a new player can complete first landing without external instructions.
+- Add the owner-requested landscape **Proceed anyway** path: attempt native portrait lock, then allow a constrained portrait viewport only if no operational content or minimum touch target is cropped. Crop decorative satellite imagery only and retain the rotate prompt on unsafe dimensions.
+- Acceptance: a new player can complete first landing without external instructions; the owner confirms the landscape fallback on a phone and no radar, console, warning, or control is hidden.
 
 ### Task 25 — PWA release and recovery audit
 - Validate icons/manifest, secure hosting, offline cache, version update, save migrations from every fixture, export/import, storage persistence messaging, and phone browser matrix.

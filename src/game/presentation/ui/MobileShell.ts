@@ -1,4 +1,10 @@
+import type {
+  MenuExportResult,
+  MenuImportResult,
+  MenuSaveState,
+} from '../../application/MenuPersistenceController';
 import type { AudioGate, AudioGateState } from '../../infrastructure/audio/AudioGate';
+import type { UserSettingsV1 } from '../../application/ports/persistence';
 import type { PwaUpdateView } from '../../infrastructure/pwa/PwaUpdateController';
 
 interface InstallPromptEvent extends Event {
@@ -10,22 +16,47 @@ interface NavigatorWithStandalone extends Navigator {
   standalone?: boolean;
 }
 
+export interface MobileShellActions {
+  createInitialProfile(): MenuSaveState;
+  requestPersistentStorage(): void;
+  exportSave(): MenuExportResult | null;
+  importSave(text: string): MenuImportResult;
+  saveSettings(settings: UserSettingsV1): boolean;
+}
+
 export class MobileShell implements PwaUpdateView {
   readonly #root: HTMLElement;
   readonly #audio: AudioGate;
+  readonly #actions: MobileShellActions;
+  #settings: UserSettingsV1;
+  #saveState: MenuSaveState = {
+    canContinue: false,
+    shortLabel: 'CHECKING STORAGE',
+    detail: 'Reading local controller data…',
+    tone: 'neutral',
+  };
   #installPrompt: InstallPromptEvent | null = null;
   #diagnosticTimer = 0;
   #offlineReady = Boolean(navigator.serviceWorker?.controller);
   #resumeAction: (() => void) | null = null;
 
-  constructor(root: HTMLElement, audio: AudioGate) {
+  constructor(
+    root: HTMLElement,
+    audio: AudioGate,
+    settings: UserSettingsV1,
+    actions: MobileShellActions,
+  ) {
     this.#root = root;
     this.#audio = audio;
+    this.#settings = structuredClone(settings);
+    this.#actions = actions;
     this.#render();
     this.#bindEvents();
+    this.#applySettingsToView();
     this.#updateConnectivity();
     this.#updateInstallState();
     this.#updateDiagnostics();
+    this.setSaveState(this.#saveState);
   }
 
   get isAtSafeUpdateBoundary(): boolean {
@@ -42,6 +73,21 @@ export class MobileShell implements PwaUpdateView {
     };
     status.textContent = labels[state];
     status.dataset.state = state;
+  }
+
+  setSaveState(state: MenuSaveState): void {
+    this.#saveState = state;
+    const continueButton = this.#requiredElement<HTMLButtonElement>('#continue-shift');
+    continueButton.disabled = !state.canContinue;
+    continueButton.dataset.tone = state.tone;
+    const label = continueButton.querySelector<HTMLElement>('small');
+    if (label) {
+      label.textContent = state.shortLabel;
+    }
+    const savePanel = this.#requiredElement<HTMLElement>('#save-state');
+    savePanel.dataset.tone = state.tone;
+    this.#requiredElement('#save-state-label').textContent = state.shortLabel;
+    this.#requiredElement('#save-state-detail').textContent = state.detail;
   }
 
   setResumeAction(action: () => void): void {
@@ -65,12 +111,19 @@ export class MobileShell implements PwaUpdateView {
     const toast = this.#requiredElement<HTMLElement>('#system-toast');
     toast.hidden = false;
     toast.innerHTML = `
-      <div><strong>UPDATE READY</strong><span>A new control-room build is available.</span></div>
+      <div><strong>UPDATE READY</strong><span>Progress will be checkpointed before installation.</span></div>
       <button type="button" class="compact-button" id="apply-update">APPLY</button>
     `;
     toast.querySelector<HTMLButtonElement>('#apply-update')?.addEventListener('click', applyUpdate, {
       once: true,
     });
+  }
+
+  showUpdateBlocked(): void {
+    this.#showToast(
+      'UPDATE DEFERRED',
+      'The current save could not be verified. Export it from Save Tools before updating.',
+    );
   }
 
   destroy(): void {
@@ -113,9 +166,9 @@ export class MobileShell implements PwaUpdateView {
               <span>NEW SHIFT</span><small>REGIONAL TRAINING</small>
             </button>
             <button type="button" id="continue-shift" disabled aria-describedby="continue-help">
-              <span>CONTINUE</span><small>NO SAVED SHIFT</small>
+              <span>CONTINUE</span><small>CHECKING STORAGE</small>
             </button>
-            <p class="sr-only" id="continue-help">Continue becomes available after save support is added.</p>
+            <p class="sr-only" id="continue-help">Continue loads the controller profile stored on this device.</p>
             <div class="split-actions">
               <button type="button" id="open-settings">SETTINGS</button>
               <button type="button" id="save-tools">SAVE TOOLS</button>
@@ -136,7 +189,7 @@ export class MobileShell implements PwaUpdateView {
             <header><p class="eyebrow">CONTROL ROOM</p><h2 id="settings-title">Settings</h2></header>
             <label class="setting-row">
               <span><strong>Master audio</strong><small>Procedural effects and ambience</small></span>
-              <input type="checkbox" id="master-audio" checked />
+              <input type="checkbox" id="master-audio" />
             </label>
             <label class="setting-row">
               <span><strong>Reduced motion</strong><small>Minimize sweep and pulse animation</small></span>
@@ -146,6 +199,23 @@ export class MobileShell implements PwaUpdateView {
               <strong>VIEWPORT DIAGNOSTICS</strong>
               <output id="viewport-diagnostics">Measuring…</output>
             </div>
+            <button type="submit" class="primary-button">CLOSE</button>
+          </form>
+        </dialog>
+
+        <dialog id="save-dialog" aria-labelledby="save-title">
+          <form method="dialog" class="dialog-card">
+            <header><p class="eyebrow">LOCAL DATA</p><h2 id="save-title">Save Tools</h2></header>
+            <section class="save-state" id="save-state" data-tone="neutral" aria-live="polite">
+              <strong id="save-state-label">CHECKING STORAGE</strong>
+              <span id="save-state-detail">Reading local controller data…</span>
+            </section>
+            <div class="save-actions">
+              <button type="button" id="export-save">EXPORT SAVE</button>
+              <button type="button" id="import-save">IMPORT SAVE</button>
+              <input class="sr-only" type="file" id="import-save-file" accept="application/json,.json" />
+            </div>
+            <output class="save-operation" id="save-operation" aria-live="polite"></output>
             <button type="submit" class="primary-button">CLOSE</button>
           </form>
         </dialog>
@@ -171,7 +241,7 @@ export class MobileShell implements PwaUpdateView {
           <div class="rotate-phone" aria-hidden="true">↻</div>
           <p class="eyebrow">AIRSPACE PAUSED</p>
           <h2>Rotate to portrait</h2>
-          <p>Vector Control is designed for upright phone operation.</p>
+          <p>Vector Control is designed for upright phone operation. A safe landscape fallback is planned.</p>
         </section>
       </div>
     `;
@@ -179,10 +249,23 @@ export class MobileShell implements PwaUpdateView {
 
   #bindEvents(): void {
     this.#requiredElement('#new-shift').addEventListener('click', () => {
+      const state = this.#actions.createInitialProfile();
+      this.#actions.requestPersistentStorage();
+      this.setSaveState(state);
       this.#audio.playConfirmation();
       this.#showInfo(
-        'TRAINING AIRSPACE',
-        'Shift preparation is online. The interactive regional radar map arrives in the next map milestone; no progress is created by this preview.',
+        state.canContinue ? 'CONTROLLER PROFILE SECURED' : 'PROFILE NOT CREATED',
+        state.canContinue
+          ? 'Your versioned local profile is ready. The interactive regional radar arrives in the map milestone.'
+          : state.detail,
+        'OPERATIONS',
+      );
+    });
+
+    this.#requiredElement('#continue-shift').addEventListener('click', () => {
+      this.#showInfo(
+        'PROFILE VERIFIED',
+        'Your progress is readable and ready. Shift resume becomes active when the regional map is implemented.',
         'OPERATIONS',
       );
     });
@@ -193,21 +276,31 @@ export class MobileShell implements PwaUpdateView {
     });
 
     this.#requiredElement('#save-tools').addEventListener('click', () => {
-      this.#showInfo(
-        'SAVE TOOLS',
-        'Versioned export, import, backup, and migration controls are scheduled for the next task.',
-        'DATA MANAGEMENT',
-      );
+      this.#requiredElement<HTMLOutputElement>('#save-operation').textContent = '';
+      this.#requiredElement<HTMLDialogElement>('#save-dialog').showModal();
     });
 
+    this.#requiredElement('#export-save').addEventListener('click', () => this.#exportSave());
+    this.#requiredElement('#import-save').addEventListener('click', () => {
+      this.#requiredElement<HTMLInputElement>('#import-save-file').click();
+    });
+    this.#requiredElement<HTMLInputElement>('#import-save-file').addEventListener(
+      'change',
+      (event) => {
+        void this.#importSave(event.currentTarget as HTMLInputElement);
+      },
+    );
+
     this.#requiredElement<HTMLInputElement>('#master-audio').addEventListener('change', (event) => {
-      this.#audio.setMuted(!(event.currentTarget as HTMLInputElement).checked);
+      this.#settings.audioMuted = !(event.currentTarget as HTMLInputElement).checked;
+      this.#audio.setMuted(this.#settings.audioMuted);
+      this.#persistSettings();
     });
 
     this.#requiredElement<HTMLInputElement>('#reduced-motion').addEventListener('change', (event) => {
-      document.documentElement.dataset.reduceMotion = String(
-        (event.currentTarget as HTMLInputElement).checked,
-      );
+      this.#settings.reducedMotion = (event.currentTarget as HTMLInputElement).checked;
+      document.documentElement.dataset.reduceMotion = String(this.#settings.reducedMotion);
+      this.#persistSettings();
     });
 
     this.#requiredElement('#install-app').addEventListener('click', () => {
@@ -223,6 +316,67 @@ export class MobileShell implements PwaUpdateView {
     window.addEventListener('resize', this.#queueDiagnostics, { passive: true });
     window.visualViewport?.addEventListener('resize', this.#queueDiagnostics, { passive: true });
     window.addEventListener('beforeinstallprompt', this.#captureInstallPrompt);
+  }
+
+  #applySettingsToView(): void {
+    this.#requiredElement<HTMLInputElement>('#master-audio').checked = !this.#settings.audioMuted;
+    this.#requiredElement<HTMLInputElement>('#reduced-motion').checked = this.#settings.reducedMotion;
+    document.documentElement.dataset.reduceMotion = String(this.#settings.reducedMotion);
+  }
+
+  #persistSettings(): void {
+    const saved = this.#actions.saveSettings(structuredClone(this.#settings));
+    if (!saved) {
+      this.#showToast('SETTINGS NOT SAVED', 'Browser storage is unavailable or from a newer build.');
+    }
+  }
+
+  #exportSave(): void {
+    const exported = this.#actions.exportSave();
+    const output = this.#requiredElement<HTMLOutputElement>('#save-operation');
+    if (!exported) {
+      output.textContent = 'Nothing is stored on this device yet.';
+      output.dataset.tone = 'warning';
+      return;
+    }
+
+    const blob = new Blob([exported.text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = exported.filename;
+    anchor.hidden = true;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    output.textContent = exported.hasUsableSave
+      ? 'Save exported. Keep the JSON file somewhere safe.'
+      : 'Recovery data exported. This file does not contain a currently playable save.';
+    output.dataset.tone = exported.hasUsableSave ? 'ready' : 'warning';
+  }
+
+  async #importSave(input: HTMLInputElement): Promise<void> {
+    const output = this.#requiredElement<HTMLOutputElement>('#save-operation');
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+
+    try {
+      const imported = this.#actions.importSave(await file.text());
+      this.setSaveState(imported.state);
+      output.textContent = imported.result.ok
+        ? imported.result.migrated
+          ? 'Legacy save migrated, verified, backed up, and imported.'
+          : 'Save verified, backed up, and imported.'
+        : imported.result.message;
+      output.dataset.tone = imported.result.ok ? 'ready' : 'error';
+    } catch {
+      output.textContent = 'The selected file could not be read.';
+      output.dataset.tone = 'error';
+    }
   }
 
   readonly #captureInstallPrompt = (event: Event): void => {

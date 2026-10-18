@@ -7,6 +7,7 @@ inclusion: always
 ## Viewport contract
 
 - Native design orientation is portrait. Manifest requests `portrait-primary`; if the browser ignores it, a rotate-device overlay pauses the simulation in landscape.
+- The landscape overlay must eventually offer **Proceed anyway**. First attempt `screen.orientation.lock('portrait-primary')` when installed/fullscreen and supported. If the browser refuses, use a constrained portrait virtual viewport only when every radar region, console control, safety cue, and minimum touch target remains available; crop decorative imagery only. Never crop operational airspace or controls. Devices that cannot satisfy this retain the rotate requirement. Ask the owner to phone-test and confirm the fallback before release.
 - Support narrow phones from 320×568 CSS pixels, modern tall phones, display cutouts, and browser chrome using `100dvh` plus safe-area environment insets.
 - Radar uses approximately the upper 75% and the console the lower 25%, but the divider may shift within 70/30–78/22 to preserve minimum console controls.
 - Keep gameplay world fixed to the radar region. Selection never pans or recenters the camera.

@@ -4,9 +4,9 @@ A planned touch-first portrait air-traffic-control simulator built with TypeScri
 
 ## Current status
 
-Task 1 provides the Phaser-powered portrait shell and accessible mobile main menu. It includes orientation/interruption pause, explicit resume, safe-area diagnostics, retryable first-gesture audio, install guidance, offline/update readiness UI, settings, and placeholder New Shift/Save Tools actions. Core ATC gameplay and persistence remain intentionally unimplemented.
+Task 1 passed owner phone testing. Task 2 adds versioned LocalStorage saves, checksum validation, staging/backup/quarantine recovery, pure v0→v1 migration, independently versioned settings, save import/export, best-effort persistent-storage requests, and verified checkpointing before PWA updates. Core ATC gameplay remains intentionally unimplemented.
 
-Task 1 is awaiting owner phone verification before Task 2 begins. The satellite-imagery/ATC map style will receive a separate playable confirmation gate in Task 3 before aircraft implementation.
+Task 2 is awaiting owner phone verification of Save Tools before Task 3 begins. Task 3 will provide the satellite-imagery/ATC map checkpoint and requires explicit owner art-style confirmation before aircraft implementation. A safe optional landscape path is recorded for release hardening: it may crop decorative imagery only, never operational airspace, controls, or warnings.
 
 ## Commands
 

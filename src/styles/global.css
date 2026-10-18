@@ -559,3 +559,63 @@ dialog::backdrop {
 :root[data-reduce-motion="true"] #phaser-stage {
   opacity: 0.8;
 }
+
+.save-state {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgb(146 187 171 / 24%);
+  color: var(--muted);
+  background: rgb(7 20 23 / 68%);
+}
+
+.save-state strong {
+  color: var(--ink);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+}
+
+.save-state span,
+.save-operation {
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
+.save-state[data-tone="ready"] {
+  border-color: rgb(141 200 178 / 55%);
+}
+
+.save-state[data-tone="warning"],
+.save-operation[data-tone="warning"] {
+  color: var(--warning);
+}
+
+.save-state[data-tone="error"],
+.save-operation[data-tone="error"] {
+  color: var(--danger);
+  border-color: rgb(222 119 110 / 55%);
+}
+
+.save-operation[data-tone="ready"] {
+  color: var(--operational-bright);
+}
+
+.save-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.save-operation {
+  display: block;
+  min-height: 2.1em;
+  color: var(--muted);
+}
+
+#continue-shift[data-tone="ready"]:not(:disabled) {
+  border-color: rgb(141 200 178 / 48%);
+}
+
+#continue-shift[data-tone="warning"]:not(:disabled) {
+  border-color: rgb(228 183 109 / 58%);
+}
