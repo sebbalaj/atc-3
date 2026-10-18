@@ -146,7 +146,7 @@ export class RegionalMapScene extends Phaser.Scene {
     const center = { x: width * 0.55, y: radarHeight * 0.56 };
     const angle = -0.16;
     const runwayLength = Math.min(width * 0.46, radarHeight * 0.33);
-    const runwayWidth = Math.max(11, Math.min(16, width * 0.037));
+    const runwayWidth = Math.max(13, Math.min(18, width * 0.041));
     const transform = (localX: number, localY: number): Point => ({
       x: center.x + localX * Math.cos(angle) - localY * Math.sin(angle),
       y: center.y + localX * Math.sin(angle) + localY * Math.cos(angle),
@@ -160,12 +160,12 @@ export class RegionalMapScene extends Phaser.Scene {
       transform(perimeterWidth / 2, perimeterHeight / 2),
       transform(-perimeterWidth / 2, perimeterHeight / 2),
     ];
-    this.#chart.fillStyle(0x17231f, 0.46);
+    this.#chart.fillStyle(0x101b19, 0.68);
     this.#fillPolygon(perimeter);
-    this.#drawDashedPolygon(perimeter, 0xa7bdb4, 0.3);
+    this.#drawDashedPolygon(perimeter, 0xc2d5cd, 0.5);
 
     // Taxiway, apron, and terminal geometry use a muted aerodrome-chart hierarchy.
-    this.#chart.lineStyle(Math.max(5, runwayWidth * 0.46), 0x6e705f, 0.86);
+    this.#chart.lineStyle(Math.max(6, runwayWidth * 0.5), 0x858675, 0.94);
     const taxiStart = transform(-runwayLength * 0.31, runwayWidth * 1.2);
     const taxiMiddle = transform(runwayLength * 0.06, runwayWidth * 2.4);
     const taxiEnd = transform(runwayLength * 0.3, runwayWidth * 1.2);
@@ -213,9 +213,9 @@ export class RegionalMapScene extends Phaser.Scene {
       transform(runwayLength / 2, runwayWidth / 2),
       transform(-runwayLength / 2, runwayWidth / 2),
     ];
-    this.#chart.fillStyle(0x202727, 0.98);
+    this.#chart.fillStyle(0x131a1b, 1);
     this.#fillPolygon(runway);
-    this.#chart.lineStyle(1, 0xe0e5dc, 0.86);
+    this.#chart.lineStyle(1.5, 0xf1f4ed, 0.96);
     this.#strokePolygon(runway);
 
     this.#chart.lineStyle(1, 0xf1f0e6, 0.88);
