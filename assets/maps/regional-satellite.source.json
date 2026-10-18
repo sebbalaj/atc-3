@@ -1,0 +1,13 @@
+{
+  "id": "regional-satellite-nasa-blue-marble",
+  "source": "NASA Earthdata Global Imagery Browse Services (GIBS)",
+  "sourcePage": "https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api",
+  "mediaPolicy": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+  "request": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=BlueMarble_ShadedRelief_Bathymetry&STYLES=&FORMAT=image%2Fjpeg&TRANSPARENT=false&WIDTH=1024&HEIGHT=1536&SRS=EPSG%3A4326&BBOX=-124.6%2C43.2%2C-122.8%2C45.9",
+  "layer": "BlueMarble_ShadedRelief_Bathymetry",
+  "boundingBox": "-124.6,43.2,-122.8,45.9",
+  "fetchedAt": "2026-10-18T16:08:05.672Z",
+  "bytes": 125099,
+  "credit": "NASA Earth Observatory / NASA Earthdata GIBS",
+  "note": "Locally bundled visual backdrop for a fictional game map; not current or navigational data. No NASA endorsement is implied."
+}

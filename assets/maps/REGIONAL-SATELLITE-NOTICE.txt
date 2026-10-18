@@ -1,0 +1,5 @@
+Credit: NASA Earth Observatory / NASA Earthdata GIBS
+Source API: https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api
+NASA media guidelines: https://www.nasa.gov/nasa-brand-center/images-and-media/
+NASA material is generally not protected by copyright unless otherwise noted; NASA identifiers and logos are excluded.
+This fictional ATC game does not imply NASA endorsement and does not present the image as current or navigational data.
