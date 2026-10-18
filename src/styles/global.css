@@ -781,3 +781,62 @@ dialog::backdrop {
     min-height: 48px;
   }
 }
+
+.flight-strip-panel {
+  height: calc(100% - 53px);
+  overflow: hidden;
+}
+
+.flight-strip-list {
+  max-height: calc(100% - 27px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(141 200 178 / 40%) transparent;
+}
+
+.flight-strip {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgb(142 183 168 / 18%);
+  border-left: 3px solid #7fb69f;
+  background: rgb(20 47 43 / 72%);
+}
+
+.flight-strip strong,
+.flight-strip span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flight-strip strong {
+  color: #dce9e4;
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+}
+
+.flight-strip span {
+  margin-top: 3px;
+  color: #8ba199;
+  font-size: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.strip-altitude {
+  color: #bdd1c9;
+  font-size: 0.61rem;
+  white-space: nowrap;
+}
+
+@media (max-height: 650px) and (orientation: portrait) {
+  .flight-strip-panel {
+    height: calc(100% - 51px);
+  }
+}

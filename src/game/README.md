@@ -1,6 +1,6 @@
-# Planned game module structure
+# Game module structure
 
-No gameplay code is implemented until the design is approved.
+Task 4 begins the approved gameplay implementation while preserving these boundaries.
 
 ```text
 src/game/

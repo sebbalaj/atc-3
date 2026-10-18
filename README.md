@@ -4,9 +4,9 @@ A planned touch-first portrait air-traffic-control simulator built with TypeScri
 
 ## Current status
 
-Tasks 1 and 2 passed owner phone testing. Task 3 adds the first real map checkpoint: locally bundled NASA Earthdata satellite imagery, fictional regional-airfield geometry, runway `REG 09/27`, threshold/approach markings, taxiway/apron/terminal details, radar grid/rings/sweep, responsive status console, and an empty flight-strip stack. No aircraft simulation exists yet.
+Tasks 1–3 passed owner phone testing. Task 4 adds the first active traffic: a deterministic 30 Hz fixed-step simulation, seeded non-overlapping light-prop spawns, continuous sector-crossing movement, lifecycle removal, pooled procedural aircraft/labels, responsive normalized coordinates, and synchronized mobile flight strips. Routing, selection, landing, fuel, and collisions remain intentionally unavailable until their dedicated tasks.
 
-Task 3 is awaiting explicit owner confirmation of the satellite/ATC art direction before Task 4 begins. A safe optional landscape path is recorded for release hardening: it may crop decorative imagery only, never operational airspace, controls, or warnings.
+Task 4 is awaiting owner phone verification before Task 5 begins. The airport overlay now uses stronger adaptive contrast and viewport-scaled markings. A safe optional landscape path remains scheduled for release hardening.
 
 ## Commands
 

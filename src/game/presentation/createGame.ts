@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
+import type { RegionalMapView } from './ports/RegionalMapView';
 import { RegionalMapScene } from './scenes/RegionalMapScene';
 import { ShellScene } from './scenes/ShellScene';
 
-export function createGame(): Phaser.Game {
+export function createGame(regionalMapView: RegionalMapView): Phaser.Game {
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'phaser-stage',
@@ -14,7 +15,7 @@ export function createGame(): Phaser.Game {
       width: window.innerWidth,
       height: window.innerHeight,
     },
-    scene: [ShellScene, RegionalMapScene],
+    scene: [ShellScene, new RegionalMapScene(regionalMapView)],
     input: {
       activePointers: 2,
       smoothFactor: 0.2,
