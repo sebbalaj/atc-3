@@ -8,9 +8,13 @@ inclusion: always
 
 Use a satellite/ATC hybrid as the provisional visual baseline. A subdued, locally bundled and license-audited satellite image—or a generated satellite-style texture—sits beneath credible civilian radar and aeronautical-chart overlays. Phaser Graphics, generated textures, SVG, and selected sprites should produce realistically proportioned airport geometry, runway markings, aircraft silhouettes, terrain labels, and weather overlays. Colors are restrained phosphor/chart tones rather than arcade neon. Optional CC0 packs may provide placeholder terrain/UI elements, but gameplay semantics must not depend on their filenames or availability. Wrap assets behind logical keys and keep a procedural fallback for each required key. Readability at phone scale takes priority over imagery detail. Task 3 requires owner confirmation after trying the visual checkpoint.
 
-The setup script downloads Kenney’s CC0 Top-down Shooter pack, validates that the response is a ZIP, unpacks it into an ignored vendor folder, and writes provenance metadata:
+The setup scripts retain provenance for both optional placeholders and shipped map imagery:
+
+- `fetch-assets.mjs` downloads Kenney’s CC0 Top-down Shooter pack into ignored source storage.
+- `fetch-map-imagery.mjs` downloads the selected NASA Earthdata GIBS Blue Marble regional image into the shipped map assets, validates JPEG type/signature/size, and writes source, request, credit, and media-policy metadata.
 
 #[[file:scripts/fetch-assets.mjs]]
+#[[file:scripts/fetch-map-imagery.mjs]]
 
 Do not blindly add internet assets. For each pack retain source URL, author/publisher, exact license, fetch date, and included license. Only CC0/public-domain assets are eligible by default; ask before introducing attribution/share-alike/noncommercial terms. Optimize chosen files into the shipped build rather than precaching an entire source pack.
 
@@ -66,6 +70,8 @@ This installation does not require publishing through the Apple App Store or Goo
 - [MDN PWA orientation manifest member](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/orientation)
 - [MDN audio for web games and user-gesture restrictions](https://developer.mozilla.org/en-US/docs/Games/Techniques/Audio_for_Web_Games)
 - [Kenney CC0 policy](https://kenney.nl/support)
+- [NASA Earthdata GIBS API](https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api)
+- [NASA images and media guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/)
 - [MDN installing and uninstalling web apps](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing)
 - [Google Chrome Help: install and manage web apps](https://support.google.com/chrome/answer/9658361)
 - [MDN persistent storage request](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist)

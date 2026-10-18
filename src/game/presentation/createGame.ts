@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { RegionalMapScene } from './scenes/RegionalMapScene';
 import { ShellScene } from './scenes/ShellScene';
 
 export function createGame(): Phaser.Game {
@@ -13,7 +14,7 @@ export function createGame(): Phaser.Game {
       width: window.innerWidth,
       height: window.innerHeight,
     },
-    scene: [ShellScene],
+    scene: [ShellScene, RegionalMapScene],
     input: {
       activePointers: 2,
       smoothFactor: 0.2,

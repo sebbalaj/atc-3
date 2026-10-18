@@ -22,6 +22,8 @@ export interface MobileShellActions {
   exportSave(): MenuExportResult | null;
   importSave(text: string): MenuImportResult;
   saveSettings(settings: UserSettingsV1): boolean;
+  startRegionalMap(): void;
+  returnToMenu(): void;
 }
 
 export class MobileShell implements PwaUpdateView {
@@ -39,6 +41,8 @@ export class MobileShell implements PwaUpdateView {
   #diagnosticTimer = 0;
   #offlineReady = Boolean(navigator.serviceWorker?.controller);
   #resumeAction: (() => void) | null = null;
+  #mapActive = false;
+  #pendingUpdateAction: (() => void) | null = null;
 
   constructor(
     root: HTMLElement,
@@ -60,7 +64,7 @@ export class MobileShell implements PwaUpdateView {
   }
 
   get isAtSafeUpdateBoundary(): boolean {
-    return !this.#root.querySelector<HTMLDialogElement>('dialog[open]');
+    return !this.#mapActive && !this.#root.querySelector<HTMLDialogElement>('dialog[open]');
   }
 
   setAudioState(state: AudioGateState): void {
@@ -104,25 +108,22 @@ export class MobileShell implements PwaUpdateView {
   showOfflineReady(): void {
     this.#offlineReady = true;
     this.#updateInstallState();
-    this.#showToast('OFFLINE READY', 'The control room is cached for offline launch.');
+    if (this.#pendingUpdateAction) {
+      this.#renderPendingUpdate();
+    } else {
+      this.#showToast('OFFLINE READY', 'The control room is cached for offline launch.');
+    }
   }
 
   showUpdateReady(applyUpdate: () => void): void {
-    const toast = this.#requiredElement<HTMLElement>('#system-toast');
-    toast.hidden = false;
-    toast.innerHTML = `
-      <div><strong>UPDATE READY</strong><span>Progress will be checkpointed before installation.</span></div>
-      <button type="button" class="compact-button" id="apply-update">APPLY</button>
-    `;
-    toast.querySelector<HTMLButtonElement>('#apply-update')?.addEventListener('click', applyUpdate, {
-      once: true,
-    });
+    this.#pendingUpdateAction = applyUpdate;
+    this.#renderPendingUpdate();
   }
 
   showUpdateBlocked(): void {
-    this.#showToast(
+    this.#renderPendingUpdate(
       'UPDATE DEFERRED',
-      'The current save could not be verified. Export it from Save Tools before updating.',
+      'The current save could not be verified. Export it from Save Tools, then retry.',
     );
   }
 
@@ -177,6 +178,32 @@ export class MobileShell implements PwaUpdateView {
           </nav>
 
           <p class="menu-footnote">PORTRAIT MODE · TOUCH-FIRST · OFFLINE CAPABLE</p>
+        </section>
+
+        <section class="map-hud" id="map-hud" aria-label="Regional radar console" hidden>
+          <div class="map-mode-label" aria-hidden="true">
+            <span>REGIONAL CONTROL AREA</span>
+            <strong>ART PREVIEW · NO ACTIVE TRAFFIC</strong>
+          </div>
+          <section class="atc-console" aria-label="Air traffic control console">
+            <div class="console-status" aria-label="Shift status">
+              <div><span>LOCAL</span><strong>06:00</strong></div>
+              <div><span>BANK</span><strong>$0</strong></div>
+              <div><span>REP</span><strong>100</strong></div>
+              <div><span>WIND</span><strong>090° / 06KT</strong></div>
+              <button type="button" id="return-menu" aria-label="Return to main menu">MENU</button>
+            </div>
+            <section class="flight-strip-panel" aria-labelledby="flight-strips-title">
+              <header>
+                <h2 id="flight-strips-title">FLIGHT STRIPS</h2>
+                <span>0 ACTIVE</span>
+              </header>
+              <div class="empty-strips">
+                <strong>NO ACTIVE TRAFFIC</strong>
+                <span>Aircraft simulation begins after visual approval.</span>
+              </div>
+            </section>
+          </section>
         </section>
 
         <footer class="build-footer">
@@ -253,21 +280,15 @@ export class MobileShell implements PwaUpdateView {
       this.#actions.requestPersistentStorage();
       this.setSaveState(state);
       this.#audio.playConfirmation();
-      this.#showInfo(
-        state.canContinue ? 'CONTROLLER PROFILE SECURED' : 'PROFILE NOT CREATED',
-        state.canContinue
-          ? 'Your versioned local profile is ready. The interactive regional radar arrives in the map milestone.'
-          : state.detail,
-        'OPERATIONS',
-      );
+      if (state.canContinue) {
+        this.#enterRegionalMap();
+      } else {
+        this.#showInfo('PROFILE NOT CREATED', state.detail, 'OPERATIONS');
+      }
     });
 
     this.#requiredElement('#continue-shift').addEventListener('click', () => {
-      this.#showInfo(
-        'PROFILE VERIFIED',
-        'Your progress is readable and ready. Shift resume becomes active when the regional map is implemented.',
-        'OPERATIONS',
-      );
+      this.#enterRegionalMap();
     });
 
     this.#requiredElement('#open-settings').addEventListener('click', () => {
@@ -311,11 +332,60 @@ export class MobileShell implements PwaUpdateView {
       this.#resumeAction?.();
     });
 
+    this.#requiredElement('#return-menu').addEventListener('click', () => {
+      this.#leaveRegionalMap();
+    });
+
     window.addEventListener('online', this.#updateConnectivity);
     window.addEventListener('offline', this.#updateConnectivity);
     window.addEventListener('resize', this.#queueDiagnostics, { passive: true });
     window.visualViewport?.addEventListener('resize', this.#queueDiagnostics, { passive: true });
     window.addEventListener('beforeinstallprompt', this.#captureInstallPrompt);
+  }
+
+  #enterRegionalMap(): void {
+    this.#mapActive = true;
+    this.#requiredElement<HTMLElement>('.menu-panel').hidden = true;
+    this.#requiredElement<HTMLElement>('.build-footer').hidden = true;
+    this.#requiredElement<HTMLElement>('#map-hud').hidden = false;
+    this.#requiredElement<HTMLElement>('.system-label').innerHTML =
+      '<i class="status-dot" aria-hidden="true"></i> REG APPROACH';
+    this.#actions.startRegionalMap();
+    this.#renderPendingUpdate();
+  }
+
+  #leaveRegionalMap(): void {
+    this.#mapActive = false;
+    this.#requiredElement<HTMLElement>('#map-hud').hidden = true;
+    this.#requiredElement<HTMLElement>('.menu-panel').hidden = false;
+    this.#requiredElement<HTMLElement>('.build-footer').hidden = false;
+    this.#requiredElement<HTMLElement>('.system-label').innerHTML =
+      '<i class="status-dot" aria-hidden="true"></i> REGIONAL CONTROL';
+    this.#actions.returnToMenu();
+    this.#renderPendingUpdate();
+    this.#requiredElement<HTMLButtonElement>('#continue-shift').focus();
+  }
+
+  #renderPendingUpdate(
+    title = 'UPDATE READY',
+    message = 'Progress will be checkpointed before installation.',
+  ): void {
+    const action = this.#pendingUpdateAction;
+    if (!action) {
+      return;
+    }
+    const toast = this.#requiredElement<HTMLElement>('#system-toast');
+    toast.hidden = false;
+    if (this.#mapActive) {
+      toast.innerHTML =
+        '<div><strong>UPDATE WAITING</strong><span>Return to the menu to checkpoint and apply it safely.</span></div>';
+      return;
+    }
+    toast.innerHTML = `
+      <div><strong>${title}</strong><span>${message}</span></div>
+      <button type="button" class="compact-button" id="apply-update">APPLY</button>
+    `;
+    toast.querySelector<HTMLButtonElement>('#apply-update')?.addEventListener('click', action);
   }
 
   #applySettingsToView(): void {

@@ -22,14 +22,14 @@ Execute exactly one task at a time. At the end of each task: build, open the run
 - Menu actions: New Shift (placeholder), Continue disabled without save, Settings, Save Import/Export placeholder.
 - Acceptance: usable at 320×568 and a tall phone; no page scroll/zoom; landscape pauses with rotate message; offline production shell reloads after first secure visit.
 
-### Task 2 — Save service v1 (current; awaiting owner phone check)
+### Task 2 — Save service v1 (complete; owner phone-approved)
 - Implement envelope, runtime validation, atomic staging/backup write, load recovery, settings separation, export/import, and a sample future migration registry.
 - Persist menu settings and a placeholder progression record.
 - Acceptance: valid save round-trips; malformed primary falls back to backup without overwrite; future schema is preserved/rejected; update flow checkpoints first.
 
 ## Phase 1 — First playable routing loop (Map 1)
 
-### Task 3 — Realistic satellite/ATC regional map and radar console
+### Task 3 — Realistic satellite/ATC regional map and radar console (current; awaiting owner art confirmation)
 - Draw a simplified but credible regional environment using a subdued satellite-imagery base treatment beneath an aeronautical-chart/ATC overlay, plus airport/taxiway/building geometry, realistically marked runway `REG 09/27`, threshold identifiers, restrained radar rings/sweep, status row, and empty flight-strip stack.
 - Use only locally bundled, license-audited imagery or generated satellite-style textures; the game must not depend on live map tiles. Establish normalized layout, resize mapping, and visual hierarchy that keeps operational contacts clearer than terrain detail.
 - Acceptance: map reads as realistic satellite imagery blended with civilian ATC rather than arcade neon, remains legible across target portrait sizes, console consumes roughly 25%, and identifiers do not overlap critical controls.

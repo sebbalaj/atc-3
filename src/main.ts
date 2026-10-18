@@ -27,6 +27,7 @@ const persistence = new MenuPersistenceController(
 const settings = persistence.loadSettings().settings;
 
 let shell: MobileShell;
+let game: ReturnType<typeof createGame> | null = null;
 const audio = new AudioGate((state) => shell?.setAudioState(state));
 audio.setMuted(settings.audioMuted);
 shell = new MobileShell(mount, audio, settings, {
@@ -37,10 +38,18 @@ shell = new MobileShell(mount, audio, settings, {
   exportSave: () => persistence.exportSave(),
   importSave: (text) => persistence.importSave(text),
   saveSettings: (nextSettings) => persistence.saveSettings(nextSettings),
+  startRegionalMap: () => {
+    game?.scene.stop('shell');
+    game?.scene.start('regional-map');
+  },
+  returnToMenu: () => {
+    game?.scene.stop('regional-map');
+    game?.scene.start('shell');
+  },
 });
 shell.setSaveState(persistence.currentSaveState());
 
-const game = createGame();
+game = createGame();
 const lifecycle = new AppLifecycle(game, audio, (paused) => shell.setInterruptionPaused(paused));
 shell.setResumeAction(() => lifecycle.resumeAfterInterruption());
 const updates = new PwaUpdateController(
@@ -55,6 +64,6 @@ if (import.meta.hot) {
     lifecycle.destroy();
     shell.destroy();
     audio.destroy();
-    game.destroy(true);
+    game?.destroy(true);
   });
 }
